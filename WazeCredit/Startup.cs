@@ -12,28 +12,41 @@ using WazeCredit.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WazeCredit.Service;
+using WazeCredit.Utility.AppSettingsClasses;
 
 namespace WazeCredit
 {
     public class Startup
     {
+        private readonly IConfiguration _configuration;
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
+                    _configuration.GetConnectionString("DefaultConnection")));
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddRazorPages();
+            services.AddTransient<IMarketForecaster, MarketForecasterV2>();
+
+            #region InjectAppSettings
+            
+            services.Configure<SendGridSettings>(_configuration.GetSection("SendGridSettings"));
+            services.Configure<StripeSettings>(_configuration.GetSection("StripeSettings"));
+            services.Configure<TwilioSettings>(_configuration.GetSection("TwilioSettings"));
+            services.Configure<WazeForecastSettings>(_configuration.GetSection("WazeForecast"));
+
+            #endregion
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
