@@ -5,32 +5,39 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using WazeCredit.Models;
 using WazeCredit.Models.ViewModels;
 using WazeCredit.Service;
+using WazeCredit.Utility.AppSettingsClasses;
 
 namespace WazeCredit.Controllers
 {
     public class HomeController : Controller
     {
+        #region DI Fields
+
         private readonly IMarketForecaster _marketForecaster;
-        // private readonly MarketForecasterV2 _marketForecasterV2;
-        //
-        // public HomeController( MarketForecasterV2 marketForecasterV2)
-        // {
-        //     _marketForecasterV2 = marketForecasterV2;
-        // }
-        // private readonly ILogger<HomeController> _logger;
-        //
-        // public HomeController(ILogger<HomeController> logger)
-        // {
-        //     _logger = logger;
-        // }
+        private readonly SendGridSettings _sendGridOptions;
+        private readonly StripeSettings _stripeOptions;
+        private readonly TwilioSettings _twilioOptions;
+        private readonly WazeForecastSettings _wazeForecastOptions;
+
+        #endregion
+        
 
         public HomeViewModel ObjHomeViewModel { get; set; }
-        public HomeController(IMarketForecaster marketForecaster) 
+        public HomeController(IMarketForecaster marketForecaster,
+            IOptions<SendGridSettings> sendGridOptions,
+            IOptions<StripeSettings> stripeOptions,
+            IOptions<TwilioSettings> twilioOptions,
+            IOptions<WazeForecastSettings> wazeForecastOptions) 
         {
             _marketForecaster = marketForecaster;
+            _sendGridOptions = sendGridOptions.Value;
+            _stripeOptions = stripeOptions.Value;
+            _twilioOptions = twilioOptions.Value;
+            _wazeForecastOptions = wazeForecastOptions.Value;
             ObjHomeViewModel = new HomeViewModel();
         }
 
@@ -55,6 +62,21 @@ namespace WazeCredit.Controllers
                     break;
             }
             return View(ObjHomeViewModel);
+        }
+
+        public IActionResult AllConfigSettings()
+        {
+            return View( new List<string>()
+            {
+                $"Waze Config - Forecast Tracker : {_wazeForecastOptions.ForecastTrackerEnabled}",
+                $"SendGrid Config - SendGrid Key : {_sendGridOptions.SendGridKey}",
+                $"Stripe Config - PublishableKey : {_stripeOptions.PublishableKey}, " +
+                $"SecretKey : {_stripeOptions.SecretKey}",
+                $"Twilio Config - Account Sid : {_twilioOptions.AccountSid}, " +
+                $"Auth Token : {_twilioOptions.AuthToken}, " +
+                $"Phone Number : {_twilioOptions.PhoneNumber}"
+                
+            });
         }
 
         public IActionResult Privacy()

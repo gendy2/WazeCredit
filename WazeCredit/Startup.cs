@@ -12,8 +12,11 @@ using WazeCredit.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WazeCredit.Middleware;
 using WazeCredit.Service;
+using WazeCredit.Service.LifeTimeExample;
 using WazeCredit.Utility.AppSettingsClasses;
+using WazeCredit.Utility.DI_Config;
 
 namespace WazeCredit
 {
@@ -36,17 +39,14 @@ namespace WazeCredit
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddRazorPages();
-            services.AddTransient<IMarketForecaster, MarketForecasterV2>();
+            services.AddTransient<IMarketForecaster, MarketForecaster>();
+            services.AddTransient<TransientService,TransientService>();
+            services.AddScoped<ScopedService,ScopedService>();
+            services.AddSingleton<SingletonService,SingletonService>();
 
-            #region InjectAppSettings
-            
-            services.Configure<SendGridSettings>(_configuration.GetSection("SendGridSettings"));
-            services.Configure<StripeSettings>(_configuration.GetSection("StripeSettings"));
-            services.Configure<TwilioSettings>(_configuration.GetSection("TwilioSettings"));
-            services.Configure<WazeForecastSettings>(_configuration.GetSection("WazeForecast"));
 
-            #endregion
-            
+            services.AddAppSerttingsConfig(_configuration);
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,7 +70,7 @@ namespace WazeCredit
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseMiddleware<CustomMiddleware>();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
